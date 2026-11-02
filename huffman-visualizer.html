@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Huffman Coding Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#F5F4F0; --surface:#FFFFFF; --surface-2:#EFEEEA; --ink:#1E232A; --muted:#68727D; --line:#D4D2C9;
+  --accent:#C2410C; --on-accent:#FFFFFF; --accent-bg:#FFEDD5;
+  --hot:#0284C7; --hot-bg:#E0F2FE; --leaf:#E5EFEA;
+  --bit0:#1D4ED8; --bit1:#C2410C;
+  --hl:rgba(194,65,12,.08); --tint-a:rgba(29,78,216,.08); --tint-b:rgba(194,65,12,.08);
+  --f-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12161A; --surface:#1A2026; --surface-2:#222931; --ink:#ECEFEF; --muted:#95A1AD; --line:#2E3842;
+    --accent:#FB923C; --on-accent:#1E1B18; --accent-bg:#3F2414;
+    --hot:#38BDF8; --hot-bg:#0C243B; --leaf:#172E24;
+    --bit0:#60A5FA; --bit1:#FB923C;
+    --hl:rgba(251,146,60,.12); --tint-a:rgba(96,165,250,.12); --tint-b:rgba(251,146,60,.12);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12161A; --surface:#1A2026; --surface-2:#222931; --ink:#ECEFEF; --muted:#95A1AD; --line:#2E3842;
+  --accent:#FB923C; --on-accent:#1E1B18; --accent-bg:#3F2414;
+  --hot:#38BDF8; --hot-bg:#0C243B; --leaf:#172E24;
+  --bit0:#60A5FA; --bit1:#FB923C;
+  --hl:rgba(251,146,60,.12); --tint-a:rgba(96,165,250,.12); --tint-b:rgba(251,146,60,.12);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:14px; line-height:1.5;
+  margin:0; padding:24px 16px 48px;
+}
+[hidden]{display:none!important}
+.wrap{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.eyebrow{margin:0;font:500 11px/1.4 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+h1{margin:2px 0 4px;font:700 clamp(24px,4vw,34px)/1.1 var(--f-display);letter-spacing:-.02em}
+.lede{margin:0;max-width:65ch;color:var(--muted);font-size:14px}
+h2,h3{margin:0;font-family:var(--f-display);text-wrap:balance}
+h3{font-size:14px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;min-width:0}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+label.lbl{display:block;font:500 11px/1.4 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+textarea{
+  width:100%;resize:vertical;min-height:54px;padding:8px 10px;border:1px solid var(--line);border-radius:4px;
+  background:var(--surface-2);color:var(--ink);font:500 15px/1.4 var(--f-mono);
+}
+textarea:focus-visible,button:focus-visible,select:focus-visible,input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip,.btn{
+  font:500 13px/1 var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:4px;
+  padding:7px 10px;cursor:pointer;transition:all .1s ease;
+}
+.chip{font-family:var(--f-mono);font-size:12px;background:var(--surface-2)}
+.chip:hover,.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.btn:disabled{opacity:.4;cursor:default}
+.meta{margin-top:8px;font:400 12px/1.4 var(--f-mono);color:var(--muted)}
+.controls{display:flex;flex-direction:column;gap:10px}
+.btnrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.btnrow .btn{padding:9px 6px;font-family:var(--f-mono);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.scrubrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.scrubrow input[type=range]{flex:1 1 180px;min-width:0;accent-color:var(--accent);height:4px}
+.stepno{font:500 12px/1 var(--f-mono);color:var(--muted);white-space:nowrap}
+.speed{display:flex;align-items:center;gap:6px;font:500 11px/1 var(--f-mono);text-transform:uppercase;color:var(--muted)}
+select{background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:5px 6px;font:500 12px var(--f-mono)}
+.grid{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media (min-width:980px){.grid{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);align-items:start}}
+
+/* Subdued & lower narration card styling */
+.narr{border-left:3px solid var(--accent);background:var(--surface-2)}
+.kicker{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 4px;font:500 11px/1.4 var(--f-mono);color:var(--muted);letter-spacing:.05em}
+.pill{display:inline-block;padding:2px 6px;border-radius:3px;background:var(--accent-bg);color:var(--accent);font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:.08em}
+.narr h2{font-size:17px;line-height:1.25;margin-bottom:4px;font-weight:700}
+.narr p{margin:0;color:var(--muted);font-size:13px}
+
+.treewrap{overflow-x:auto;border:1px solid var(--line);border-radius:4px;background-color:var(--surface-2);
+  background-image:radial-gradient(var(--line) 1px,transparent 1px);background-size:16px 16px;padding:6px 0}
+.treewrap svg{display:block;margin:0 auto}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font:400 11px/1.4 var(--f-mono);color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px;border:1px solid var(--ink)}
+.legend i.h{border-color:var(--hot);background:var(--hot-bg)}
+.legend i.f{border-color:var(--accent);background:var(--accent-bg)}
+.legend i.p{border-color:var(--accent);background:var(--surface)}
+svg .ed{stroke:var(--muted);stroke-width:1.4;fill:none}
+svg .ed.on{stroke:var(--accent);stroke-width:2.5}
+svg .el{font:600 11px var(--f-mono);fill:var(--muted);text-anchor:middle;paint-order:stroke;stroke:var(--surface-2);stroke-width:3px}
+svg .el.on{fill:var(--accent)}
+svg .nd{fill:var(--surface);stroke:var(--muted);stroke-width:1.5}
+svg .nd.leaf{fill:var(--leaf)}
+svg .nd.path{stroke:var(--accent);stroke-width:2.5}
+svg .nd.held{stroke:var(--hot);stroke-width:2.5;fill:var(--hot-bg)}
+svg .nd.fresh{stroke:var(--accent);stroke-width:2.5;fill:var(--accent-bg)}
+svg .nt{fill:var(--ink);font:600 13px var(--f-mono);text-anchor:middle;dominant-baseline:central}
+svg .nt.f{font-size:12px}
+svg .ns{fill:var(--muted);font:400 10px var(--f-mono);text-anchor:middle}
+.heap{display:flex;flex-wrap:wrap;gap:5px}
+.hb{width:44px;border:1px solid var(--line);border-radius:4px;text-align:center;background:var(--surface-2);font-family:var(--f-mono);overflow:hidden}
+.hb .l{display:block;padding:3px 0 0;font-size:11px;color:var(--muted)}
+.hb .v{display:block;padding:0 0 3px;font-size:15px;font-weight:600}
+.hb .i{display:block;border-top:1px solid var(--line);font-size:10px;color:var(--muted);padding:1px 0}
+.hb.t{border-color:var(--hot);background:var(--hot-bg)}
+.hb.min{border-color:var(--accent)}
+.hint{margin:8px 0 0;font-size:12px;color:var(--muted);font-family:var(--f-mono)}
+.code{overflow-x:auto;font:400 12px/1.5 var(--f-mono)}
+.code .ttl{display:block;padding:2px 6px;font-weight:600;color:var(--accent);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.code .ln{display:block;padding:2px 6px;border-radius:3px;white-space:pre}
+.code .ln i{display:inline-block;width:2ch;margin-right:1.5ch;font-style:normal;color:var(--muted);text-align:right}
+.code .ln.on{background:var(--hl);box-shadow:inset 2px 0 0 var(--accent)}
+.code .gap{height:8px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:6px}
+.tile{background:var(--surface-2);border-radius:4px;padding:6px 8px;border:1px solid var(--line)}
+.tile b{display:block;font:600 18px/1.2 var(--f-mono);font-variant-numeric:tabular-nums}
+.tile span{font:500 10px/1.3 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums}
+th{font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:3px 6px;border-bottom:1px solid var(--line)}
+td{padding:4px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.num,th.num{text-align:right}
+tr.cur td{background:var(--hl)}
+tr.foot td{border-bottom:0;font-weight:600}
+.b0{color:var(--bit0);font-weight:600}.b1{color:var(--bit1);font-weight:600}
+.dim{color:var(--muted)}
+.bits{font:500 13px/1.8 var(--f-mono);word-break:break-all}
+.bits span{padding:1px 2px;border-radius:2px}
+.bits span.a{background:var(--tint-a)}.bits span.b{background:var(--tint-b)}
+.rowbtn{margin-top:8px}
+.facts{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;margin:10px 0 0;font-size:13px}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0;font:600 13px var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.ok{color:var(--accent)}
+.empty{padding:20px 8px;text-align:center;color:var(--muted);font-family:var(--f-mono)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">DAA Laboratory &middot; Greedy Strategy</p>
+    <h1>Huffman Coding Visualizer</h1>
+    <p class="lede">Inspect the prefix-free tree construction, tracking heap arrays, operational step counts, and optimal bitstream generation.</p>
+  </header>
+
+  <section class="card">
+    <label class="lbl" for="txt">Input text payload</label>
+    <textarea id="txt" maxlength="240" rows="2" spellcheck="false" autocomplete="off">mississippi river</textarea>
+    <div class="chips" id="examples"></div>
+    <div class="meta" id="inMeta"></div>
+  </section>
+
+  <div id="empty" class="card empty" hidden>Provide at least one character to build the Huffman tree.</div>
+
+  <div id="app">
+    <section class="card controls" aria-label="Stepper controls">
+      <div class="btnrow">
+        <button class="btn" id="bReset" type="button">&#8634; Reset</button>
+        <button class="btn" id="bBack" type="button">&larr; Back</button>
+        <button class="btn primary" id="bPlay" type="button">&#9654; Play</button>
+        <button class="btn" id="bNext" type="button">Next &rarr;</button>
+      </div>
+      <div class="scrubrow">
+        <input type="range" id="scrub" min="0" max="0" value="0" aria-label="Step">
+        <span class="stepno" id="stepNo"></span>
+        <label class="speed" for="speed">Speed
+          <select id="speed">
+            <option value="1600">Slow</option>
+            <option value="900" selected>Normal</option>
+            <option value="400">Fast</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <div class="grid" style="margin-top:16px">
+      <!-- Left Column: Primary visual elements (Tree -> Heap -> Narration placed lower down) -->
+      <div class="col">
+        <section class="card">
+          <div class="card-h">
+            <h3>Forest &amp; Huffman Tree</h3>
+            <button class="chip" id="fit" type="button">Fit width</button>
+          </div>
+          <div class="treewrap" id="tree"></div>
+          <div class="legend">
+            <span><i class="h"></i>extracted heap node</span>
+            <span><i class="f"></i>new / active node</span>
+            <span><i class="p"></i>trace path</span>
+            <span>edges: 0=left, 1=right</span>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-bottom:8px">Min-Heap Array Q</h3>
+          <div class="heap" id="heap"></div>
+          <p class="hint">Index 0 is the current minimum. Parent = &lfloor;(i-1)/2&rfloor;; Children = 2i+1, 2i+2.</p>
+        </section>
+
+        <!-- Narration moved lower down, cleaner & more compact -->
+        <section class="card narr" aria-live="polite">
+          <p class="kicker"><span class="pill" id="phase"></span><span id="kick"></span></p>
+          <h2 id="sTitle"></h2>
+          <p id="sText"></p>
+        </section>
+      </div>
+
+      <!-- Right Column: Code, Counters, Table, Encoded -->
+      <div class="col">
+        <section class="card">
+          <h3 style="margin-bottom:6px">Algorithm Pseudocode</h3>
+          <div class="code" id="pseudo"></div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-bottom:8px">Operational Metrics</h3>
+          <div class="tiles" id="counters"></div>
+          <p class="hint" id="costNote"></p>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-bottom:6px">Code Table</h3>
+          <div class="tablewrap"><table id="codeTable"></table></div>
+        </section>
+
+        <section class="card">
+          <h3 style="margin-bottom:6px">Encoded Bitstream</h3>
+          <div id="encoded"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script id="core">
+function huffBuild(text){
+  const chars=Array.from(text.replace(/\r/g,''));
+  const N=chars.length;
+  const freq=new Map();
+  chars.forEach(ch=>freq.set(ch,(freq.get(ch)||0)+1));
+  const firstSeen=Array.from(freq.keys());
+  const sorted=Array.from(freq.entries()).sort((a,b)=>a[1]-b[1]||a[0].codePointAt(0)-b[0].codePointAt(0));
+  const nodes=sorted.map((e,i)=>({id:i,ch:e[0],freq:e[1],left:null,right:null,name:null}));
+  const n=nodes.length;
+  const idOf=new Map(sorted.map((e,i)=>[e[0],i]));
+  const disp=ch=>ch===' '?'\u2423':ch==='\n'?'\u21b5':ch==='\t'?'\u21e5':ch;
+  const lab=id=>nodes[id].left===null?"'"+disp(nodes[id].ch)+"'":nodes[id].name;
+
+  const c={ext:0,ins:0,cmp:0,swp:0};
+  let touched=[];
+  const prio=(a,b)=>{const x=nodes[a],y=nodes[b];if(x.freq!==y.freq)return x.freq-y.freq;const xi=x.left!==null,yi=y.left!==null;if(xi!==yi)return xi?-1:1;return x.id-y.id;};
+  const less=(a,b)=>{c.cmp++;return prio(a,b)<0;};
+  const swap=(h,i,j)=>{const t=h[i];h[i]=h[j];h[j]=t;c.swp++;touched.push(i,j);};
+  const siftDown=(h,i)=>{for(;;){const l=2*i+1,r=l+1;let m=i;
+    if(l<h.length&&less(h[l],h[m]))m=l;
+    if(r<h.length&&less(h[r],h[m]))m=r;
+    if(m===i)return;swap(h,i,m);i=m;}};
+  const siftUp=(h,i)=>{while(i>0){const p=(i-1)>>1;if(less(h[i],h[p])){swap(h,i,p);i=p;}else return;}};
+  const extractMin=h=>{c.ext++;const top=h[0];const last=h.pop();if(h.length){h[0]=last;touched.push(0);siftDown(h,0);}return top;};
+  const insert=(h,id)=>{c.ins++;h.push(id);touched.push(h.length-1);siftUp(h,h.length-1);};
+  const snapC=()=>Object.assign({},c);
+  const diff=(a)=>({cmp:c.cmp-a.cmp,swp:c.swp-a.swp});
+  const plural=(k,w)=>k+' '+w+(k===1?'':'s');
+
+  const S=[];
+  const snap=o=>{
+    const s=Object.assign({phase:'build',held:[],fresh:[],focus:[],touched:[],lines:[],pathLeaf:null,assigned:[],iter:null},o);
+    s.heap=o.heap?o.heap.slice():[];
+    s.touched=Array.from(new Set(s.touched));
+    s.counters=snapC();
+    if(!o.roots) s.roots=s.held.concat(s.fresh,s.heap.slice().sort(prio));
+    S.push(s);
+  };
+
+  let h=firstSeen.map(ch=>idOf.get(ch));
+  snap({phase:'count',title:'Frequency Counting & Initialization',lines:['h1'],heap:h,
+    text:'Scanned '+N+' characters yielding '+plural(n,'distinct symbol')+'. Each symbol forms an initial leaf node with its frequency count.'});
+
+  touched=[];
+  const b0=snapC();
+  for(let i=(h.length>>1)-1;i>=0;i--) siftDown(h,i);
+  const bd=diff(b0);
+  snap({title:'Heap Construction (BUILD-MIN-HEAP)',lines:['h2'],heap:h,touched,
+    text:'Bottom-up heapify completed in '+plural(bd.cmp,'comparison')+' and '+plural(bd.swp,'swap')+'. Complexity: O(n).'});
+
+  let zc=0;
+  for(let it=1;it<=n-1;it++){
+    const iter={i:it,total:n-1};
+    let a=snapC(); touched=[];
+    const x=extractMin(h); let d=diff(a);
+    snap({title:'Extract First Minimum',lines:['h3','h5'],heap:h,held:[x],touched,iter,
+      text:'EXTRACT-MIN removes '+lab(x)+' (freq '+nodes[x].freq+'). Cost: '+plural(d.cmp,'comparison')+','+plural(d.swp,'swap')+'.'});
+    a=snapC(); touched=[];
+    const y=extractMin(h); d=diff(a);
+    snap({title:'Extract Second Minimum',lines:['h6'],heap:h,held:[x,y],touched,iter,
+      text:'Second EXTRACT-MIN retrieves '+lab(y)+' (freq '+nodes[y].freq+').'});
+    const swapSides=nodes[y].left!==null&&nodes[x].left===null;
+    const L=swapSides?y:x,Rt=swapSides?x:y;
+    const z={id:nodes.length,ch:null,freq:nodes[x].freq+nodes[y].freq,left:L,right:Rt,name:'z'+(++zc)};
+    nodes.push(z);
+    snap({title:'Merge Nodes into Subtree',lines:['h4','h7','h8'],heap:h,fresh:[z.id],iter,
+      text:'Combined '+lab(L)+' and '+lab(Rt)+' into '+z.name+' (freq '+z.freq+'). Greedy choice assigns rarer nodes deeper.'});
+    a=snapC(); touched=[];
+    insert(h,z.id); d=diff(a);
+    snap({title:'Insert Combined Node',lines:['h9'],heap:h,focus:[z.id],touched,iter,
+      text:'INSERT places '+z.name+' back into Q with '+plural(d.cmp,'comparison')+'. Q size decreases by 1.'});
+  }
+
+  touched=[];
+  const root=extractMin(h);
+  snap({title:'Huffman Tree Complete',lines:['h10'],heap:h,roots:[root],focus:[root],touched,
+    text:'Final root extracted with frequency matching text length N ('+nodes[root].freq+'). Total merges: '+(n-1)+'.'});
+
+  const leafOrder=[],codes=new Map(),paths=new Map();
+  (function dfs(id,code,path){
+    const nd=nodes[id],p=path.concat(id);
+    if(nd.left===null){codes.set(id,code||'0');paths.set(id,p);leafOrder.push(id);}
+    else{dfs(nd.left,code+'0',p);dfs(nd.right,code+'1',p);}
+  })(root,'',[]);
+  leafOrder.forEach((id,k)=>{
+    const cd=codes.get(id);
+    snap({phase:'assign',title:'Assign Code for '+lab(id),lines:['a1','a2'],heap:[],roots:[root],pathLeaf:id,assigned:leafOrder.slice(0,k+1),text:'Path from root to '+lab(id)+' yields code '+cd+' ('+plural(cd.length,'bit')+').'});
+  });
+
+  let total=0;sorted.forEach((e,i)=>{total+=e[1]*codes.get(i).length;});
+  const bits=chars.map(ch=>codes.get(idOf.get(ch))).join('');
+  const decode=b=>{
+    if(nodes[root].left===null) return nodes[root].ch.repeat(b.length);
+    let cur=root,out=[];
+    for(const bit of b){cur=bit==='0'?nodes[cur].left:nodes[cur].right;if(nodes[cur].left===null){out.push(nodes[cur].ch);cur=root;}}
+    return out.join('');
+  };
+  const decoded=decode(bits);
+  const eight=8*N,fixed=N*Math.max(1,Math.ceil(Math.log2(n)));
+  let H=0;sorted.forEach(e=>{const p=e[1]/N;H-=p*Math.log2(p);});
+  const stats={total,eight,fixed,avg:total/N,H,saved:(1-total/eight)*100,ok:decoded===chars.join('')};
+
+  snap({phase:'encode',title:'Bitstream Generation',heap:[],roots:[root],assigned:leafOrder,
+    text:'Concatenated output bitstream generated using prefix codes, totaling '+total+' bits.'});
+  snap({phase:'analyze',title:'Compression Analysis',heap:[],roots:[root],assigned:leafOrder,
+    text:'Average code length: '+stats.avg.toFixed(3)+' bits/symbol. Compression savings: '+stats.saved.toFixed(1)+'% relative to 8-bit ASCII.'});
+
+  return {steps:S,nodes,codes,paths,leafOrder,root,N,n,chars,bits,stats,idOf,sorted};
+}
+</script>
+
+<script id="ui">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const disp=ch=>ch===' '?'\u2423':ch==='\n'?'\u21b5':ch==='\t'?'\u21e5':ch;
+  const PHASES={count:'Setup',build:'Tree Construction',assign:'Code Assignment',encode:'Bitstream',analyze:'Analysis'};
+  const HPSEUDO=[['h1','n = |C|          // distinct symbols'],['h2','Q = BUILD-MIN-HEAP(C)'],['h3','for i = 1 to n - 1'],['h4','    allocate a new node z'],['h5','    x = EXTRACT-MIN(Q)'],['h6','    y = EXTRACT-MIN(Q)'],['h7','    z.freq = x.freq + y.freq'],['h8','    z.left, z.right = x, y'],['h9','    INSERT(Q, z)'],['h10','return EXTRACT-MIN(Q)']];
+  const APSEUDO=[['a1','if v is a leaf'],['a2','    code[v.char] = s'],['a3','else'],['a4','    ASSIGN-CODES(v.left, s + "0")'],['a5','    ASSIGN-CODES(v.right, s + "1")']];
+
+  let m=null,idx=0,timer=null,fit=false;
+
+  function pseudoHTML(){
+    let h='<span class="ttl">HUFFMAN(C)</span>';
+    HPSEUDO.forEach((l,i)=>{h+='<span class="ln" data-id="'+l[0]+'"><i>'+(i+1)+'</i>'+esc(l[1])+'</span>';});
+    h+='<div class="gap"></div><span class="ttl">ASSIGN-CODES(v, s)</span>';
+    APSEUDO.forEach((l,i)=>{h+='<span class="ln" data-id="'+l[0]+'"><i>'+(i+1)+'</i>'+esc(l[1])+'</span>';});
+    $('pseudo').innerHTML=h;
+  }
+
+  function drawTree(st){
+    const nodes=m.nodes,DX=52,DY=70,R=17,PT=26,PX=10;
+    const pos=new Map();let cur=0,maxD=0;
+    const place=(id,d)=>{
+      const nd=nodes[id];if(d>maxD)maxD=d;
+      if(nd.left===null){pos.set(id,{x:PX+cur*DX+DX/2,d});cur++;}
+      else{place(nd.left,d+1);place(nd.right,d+1);
+        pos.set(id,{x:(pos.get(nd.left).x+pos.get(nd.right).x)/2,d});}
+    };
+    st.roots.forEach((r,i)=>{if(i)cur+=0.5;place(r,0);});
+    const W=Math.ceil(cur*DX+PX*2),H=PT*2+maxD*DY+20;
+    const pset=new Set(st.pathLeaf!==null?m.paths.get(st.pathLeaf):[]);
+    let ed='',el='',nd='';
+    pos.forEach((p,id)=>{
+      const n=nodes[id],py=PT+p.d*DY;
+      if(n.left!==null){
+        [n.left,n.right].forEach((ch,k)=>{
+          const q=pos.get(ch),qy=PT+q.d*DY,on=pset.has(id)&&pset.has(ch);
+          ed+='<line class="ed'+(on?' on':'')+'" x1="'+p.x+'" y1="'+py+'" x2="'+q.x+'" y2="'+qy+'"/>';
+          el+='<text class="el'+(on?' on':'')+'" x="'+((p.x+q.x)/2+(k===0?-9:9))+'" y="'+(((py+qy)/2)+4)+'">'+k+'</text>';
+        });
+      }
+    });
+    pos.forEach((p,id)=>{
+      const n=nodes[id],py=PT+p.d*DY,leaf=n.left===null;
+      let c='nd'+(leaf?' leaf':'');
+      if(st.held.indexOf(id)>=0)c+=' held';
+      else if(st.fresh.indexOf(id)>=0||st.focus.indexOf(id)>=0)c+=' fresh';
+      else if(pset.has(id))c+=' path';
+      nd+='<g><circle class="'+c+'" cx="'+p.x+'" cy="'+py+'" r="'+R+'"/>'+
+        '<text class="nt'+(leaf?'':' f')+'" x="'+p.x+'" y="'+py+'">'+esc(leaf?disp(n.ch):n.freq)+'</text>'+
+        '<text class="ns" x="'+p.x+'" y="'+(py+R+12)+'">'+esc(leaf?'\u00d7'+n.freq:n.name)+'</text></g>';
+    });
+    const sz=fit?'style="width:100%;max-width:'+W+'px;height:auto"':'width="'+W+'" height="'+H+'"';
+    $('tree').innerHTML='<svg viewBox="0 0 '+W+' '+H+'" '+sz+' role="img" aria-label="Tree visualization">'+ed+el+nd+'</svg>';
+  }
+
+  function drawHeap(st){
+    if(!st.heap.length){$('heap').innerHTML='<span class="dim" style="font:400 12px var(--f-mono)">Heap Q is empty.</span>';return;}
+    let h='';
+    st.heap.forEach((id,i)=>{
+      const n=m.nodes[id],leaf=n.left===null;
+      h+='<div class="hb'+(st.touched.indexOf(i)>=0?' t':'')+(i===0?' min':'')+'"><span class="l">'+esc(leaf?disp(n.ch):n.name)+'</span><span class="v">'+n.freq+'</span><span class="i">'+i+'</span></div>';
+    });
+    $('heap').innerHTML=h;
+  }
+
+  function drawCode(st){
+    const on=new Set(st.lines);
+    document.querySelectorAll('#pseudo .ln').forEach(el=>el.classList.toggle('on',on.has(el.getAttribute('data-id'))));
+  }
+
+  function bitsHTML(cd){return cd.split('').map(b=>'<span class="b'+b+'">'+b+'</span>').join('');}
+
+  function drawTable(st){
+    const done=new Set(st.assigned);
+    let h='<tr><th>Symbol</th><th class="num">Freq</th><th>Code</th><th class="num">Len</th><th class="num">Bits</th></tr>';
+    let tot=0;
+    for(let id=m.n-1;id>=0;id--){
+      const nd=m.nodes[id],cd=m.codes.get(id),has=done.has(id);
+      if(has)tot+=nd.freq*cd.length;
+      h+='<tr'+(st.pathLeaf===id?' class="cur"Honor':'')+'><td>'+esc("'"+disp(nd.ch)+"'")+'</td><td class="num">'+nd.freq+'</td><td>'+(has?bitsHTML(cd):'<span class="dim">&mdash;</span>')+'</td><td class="num">'+(has?cd.length:'<span class="dim">&mdash;</span>')+'</td><td class="num">'+(has?nd.freq*cd.length:'<span class="dim">&mdash;</span>')+'</td></tr>';
+    }
+    if(done.size===m.n)h+='<tr class="foot"><td colspan="4">Total</td><td class="num">'+tot+'</td></tr>';
+    $('codeTable').innerHTML=h;
+  }
+
+  function drawEncoded(st){
+    const box=$('encoded');
+    if(st.phase!=='encode'&&st.phase!=='analyze'){box.innerHTML='<p class="hint" style="margin:0">Bitstream generated upon code completion.</p>';return;}
+    let h='<div class="bits" id="bitsOut">';
+    m.chars.forEach((ch,i)=>{h+='<span class="'+(i%2?'b':'a')+'" title="'+esc("'"+disp(ch)+"'")+'">'+m.codes.get(m.idOf.get(ch))+'</span>';});
+    h+='</div><button class="chip rowbtn" id="copyBits" type="button">Copy Bitstream</button>';
+    if(st.phase==='analyze'){
+      const s=m.stats;
+      h+='<dl class="facts">'+
+        '<dt>ASCII (8-bit)</dt><dd>'+s.eight+' bits</dd>'+
+        '<dt>Fixed-length</dt><dd>'+s.fixed+' bits</dd>'+
+        '<dt>Huffman Total</dt><dd>'+s.total+' bits</dd>'+
+        '<dt>Space Saved</dt><dd>'+s.saved.toFixed(1)+'%</dd>'+
+        '<dt>Avg Length</dt><dd>'+s.avg.toFixed(3)+' bits</dd>'+
+        '<dt>Entropy (H)</dt><dd>'+s.H.toFixed(3)+' bits</dd>'+
+        '<dt>Lossless Match</dt><dd class="'+(s.ok?'ok':'')+'">'+(s.ok?'Verified':'Failed')+'</dd>'+
+        '</dl>';
+    }
+    box.innerHTML=h;
+    const cb=$('copyBits');
+    if(cb){cb.addEventListener('click',()=>{
+      try{navigator.clipboard.writeText(m.bits).then(()=>{cb.textContent='Copied!';},()=>{cb.textContent='Copy failed';});}catch(e){}
+    });}
+  }
+
+  function drawCounters(st){
+    const c=st.counters;
+    const items=[['Extracts',c.ext],['Inserts',c.ins],['Comparisons',c.cmp],['Swaps',c.swp]];
+    $('counters').innerHTML=items.map(i=>'<div class="tile"><b>'+i[1]+'</b><span>'+i[0]+'</span></div>').join('');
+    $('costNote').textContent='n = '+m.n+' symbols. Total heap complexity: O(n log n).';
+  }
+
+  function render(){
+    if(!m)return;
+    const st=m.steps[idx],len=m.steps.length;
+    $('scrub').max=len-1;$('scrub').value=idx;
+    $('stepNo').textContent='Step '+(idx+1)+' / '+len;
+    $('bBack').disabled=idx===0;$('bReset').disabled=idx===0;
+    $('bNext').disabled=idx===len-1;
+    $('bPlay').innerHTML=timer?'&#10074;&#10074; Pause':'&#9654; Play';
+    $('phase').textContent=PHASES[st.phase];
+    $('kick').textContent=st.iter?'Merge '+st.iter.i+' of '+st.iter.total:'Step '+(idx+1)+' of '+len;
+    $('sTitle').textContent=st.title;
+    $('sText').textContent=st.text;
+    drawTree(st);drawHeap(st);drawCode(st);drawTable(st);drawEncoded(st);drawCounters(st);
+  }
+
+  function stop(){if(timer){clearInterval(timer);timer=null;}}
+  function play(){
+    if(timer){stop();render();return;}
+    if(idx>=m.steps.length-1)idx=0;
+    timer=setInterval(()=>{
+      if(idx>=m.steps.length-1){stop();render();return;}
+      idx++;render();
+    },parseInt($('speed').value,10));
+    render();
+  }
+
+  function load(text){
+    stop();idx=0;
+    const t=text.replace(/\r/g,'');
+    if(!t.length){m=null;$('app').hidden=true;$('empty').hidden=false;$('inMeta').textContent='';return;}
+    m=huffBuild(t);
+    $('app').hidden=false;$('empty').hidden=true;
+    $('inMeta').textContent=m.N+' chars \u00b7 '+m.n+' symbols \u00b7 '+m.steps.length+' steps';
+    render();
+  }
+
+  const examples=[['mississippi river','mississippi river'],['abracadabra','abracadabra'],['huffman coding','huffman coding'],['aaaaaaaabbbc','aaaaaaaabbbc'],['CLRS a:45 b:13 c:12 d:16 e:9 f:5','a'.repeat(45)+'b'.repeat(13)+'c'.repeat(12)+'d'.repeat(16)+'e'.repeat(9)+'f'.repeat(5)]];
+  $('examples').innerHTML=examples.map((e,i)=>'<button class="chip" type="button" data-i="'+i+'">'+esc(e[0])+'</button>').join('');
+  $('examples').addEventListener('click',ev=>{
+    const b=ev.target.closest('button');if(!b)return;
+    const t=examples[+b.getAttribute('data-i')][1];
+    $('txt').value=t;load(t);
+  });
+  $('txt').addEventListener('input',()=>load($('txt').value));
+  $('bNext').addEventListener('click',()=>{stop();if(idx<m.steps.length-1)idx++;render();});
+  $('bBack').addEventListener('click',()=>{stop();if(idx>0)idx--;render();});
+  $('bReset').addEventListener('click',()=>{stop();idx=0;render();});
+  $('bPlay').addEventListener('click',play);
+  $('scrub').addEventListener('input',()=>{stop();idx=parseInt($('scrub').value,10);render();});
+  $('speed').addEventListener('change',()=>{if(timer){stop();play();}});
+  $('fit').addEventListener('click',()=>{fit=!fit;$('fit').textContent=fit?'Actual size':'Fit width';render();});
+  document.addEventListener('keydown',ev=>{
+    const t=ev.target&&ev.target.tagName;
+    if(!m||t==='TEXTAREA'||t==='INPUT'||t==='SELECT')return;
+    if(ev.key==='ArrowRight'){stop();if(idx<m.steps.length-1)idx++;render();}
+    else if(ev.key==='ArrowLeft'){stop();if(idx>0)idx--;render();}
+  });
+
+  pseudoHTML();
+  load($('txt').value);
+})();
+</script>
+</body>
+</html>
